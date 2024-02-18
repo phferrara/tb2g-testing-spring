@@ -15,6 +15,8 @@ import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import javax.validation.constraints.Email;
+
 import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
@@ -38,6 +40,9 @@ class OwnerControllerTest {
 
     @Captor
     ArgumentCaptor<String> stringArgumentCaptor;
+
+    @Captor
+    ArgumentCaptor<Owner> ownerArgumentCaptor;
 
     @BeforeEach
     void setUp() {
@@ -120,5 +125,21 @@ class OwnerControllerTest {
             .andExpect(status().isOk())
             .andExpect(model().attributeExists("owner"))
             .andExpect(view().name("owners/createOrUpdateOwnerForm"));
+    }
+
+    @Test
+    void processUpdateOwnerForm() throws Exception {
+        mockMvc.perform(post("/owners/{ownerId}/edit", 22)
+                .param("firstName", "Jimmy")
+                .param("lastName", "Buffett")
+                .param("address", "123 Duval St ")
+                .param("city", "Key West")
+                .param("telephone", "3151231234"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(view().name("redirect:/owners/{ownerId}"));
+
+        then(clinicService).should().saveOwner(ownerArgumentCaptor.capture());
+
+        assertThat(ownerArgumentCaptor.getValue().getId()).isEqualTo(22);
     }
 }
